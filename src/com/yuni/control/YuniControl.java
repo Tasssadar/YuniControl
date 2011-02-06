@@ -31,15 +31,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class YuniControl extends Activity {
-	
-	public static final byte STATE_CONNECTED = 0x01;
-	public static final byte STATE_TERMINAL  = 0x02;
-	public static final byte STATE_SCROLL    = 0x04;
-	
-	
-	public final static Config config = new Config();
-	public int state;
-	
+    
+    public static final byte STATE_CONNECTED = 0x01;
+    public static final byte STATE_TERMINAL  = 0x02;
+    public static final byte STATE_SCROLL    = 0x04;
+    
+    
+    public final static Config config = new Config();
+    public int state;
+    
     private ArrayAdapter<String> mArrayAdapter;
     private ArrayAdapter<String> mPairedDevices;
     
@@ -47,7 +47,7 @@ public class YuniControl extends Activity {
     
     private byte btTurnOn = 0;
     private View connectView = null;
-	
+    
     public static final String EXTRA_DEVICE_ADDRESS = "device_address";
     public static final byte MESSAGE_DATA = 6;
     public static final byte MESSAGE_LOG = 7;
@@ -63,23 +63,23 @@ public class YuniControl extends Activity {
             switch(msg.what)
             {
                 case BluetoothChatService.MESSAGE_STATE_CHANGE:
-                	if(msg.arg1 != BluetoothChatService.STATE_CONNECTED)
-                		break;
-                	log.writeString("Connection succesful!");
-                	dialog.dismiss();
-                	state |= STATE_CONNECTED;
-                	InitTerminal();
+                    if(msg.arg1 != BluetoothChatService.STATE_CONNECTED)
+                        break;
+                    log.writeString("Connection succesful!");
+                    dialog.dismiss();
+                    state |= STATE_CONNECTED;
+                    InitTerminal();
                     break;
                 case MESSAGE_LOG:
-                	final String buffer = (String)msg.obj;
-                	log.writeString(buffer);
-                	if((state & STATE_TERMINAL) != 0)
-                	{
-                		TextView text = (TextView) findViewById(R.id.output);
-                    	text.append(buffer + "\r\n");
-                    	state |= STATE_SCROLL;
-                	}
-                	break;
+                    final String buffer = (String)msg.obj;
+                    log.writeString(buffer);
+                    if((state & STATE_TERMINAL) != 0)
+                    {
+                        TextView text = (TextView) findViewById(R.id.output);
+                        text.append(buffer + "\r\n");
+                        state |= STATE_SCROLL;
+                    }
+                    break;
                 case BluetoothChatService.MESSAGE_TOAST:
                     final String text = msg.getData().getString(BluetoothChatService.TOAST);
                     log.writeString("Toast: " + text);
@@ -97,28 +97,44 @@ public class YuniControl extends Activity {
     };
     private final Handler pingHandler = new Handler() {
         public void handleMessage(Message msg) {
-        	/*Packet pkt = new Packet(Protocol.SMSG_PING, null, (byte) 0);
-        	con.SendPacket(pkt);
-        	Message msg2 = new Message();
-        	msg2.what = YuniControl.MESSAGE_LOG;
-			String log  = "SMSG_PING sent";
-			msg2.obj = log;
-			conStatusHandler.sendMessage(msg2); */
-			
-			byte[] data = { (byte) 0xF0 };
-	    	Packet pkt = new Packet(Protocol.SMSG_GET_RANGE_VAL, data, (byte)1);
-	    	con.SendPacket(pkt);
-	    	Message msg2 = new Message();
-        	msg2.what = YuniControl.MESSAGE_LOG;
-			String log  = "SMSG_GET_RANGE_VAL sent";
-			msg2.obj = log;
-			conStatusHandler.sendMessage(msg2);
+            Message logMsg = new Message();
+            String log  = null;
+            
+            Packet pkt = new Packet(Protocol.SMSG_ENCODER_START, null, (byte)0);
+            con.SendPacket(pkt);
+            log = "SMSG_ENCODER_START sent";
+            logMsg.what = YuniControl.MESSAGE_LOG;
+            logMsg.obj = log;
+            conStatusHandler.sendMessage(logMsg);
+            
+            byte[] dataMov = { (byte) 127, (byte)1 };
+            pkt.set(Protocol.SMSG_SET_MOVEMENT, dataMov, (byte)2);
+            con.SendPacket(pkt);
+            logMsg = new Message();
+            log  = "SMSG_SET_MOVEMENT sent";
+            logMsg.what = YuniControl.MESSAGE_LOG;
+            logMsg.obj = log;
+            conStatusHandler.sendMessage(logMsg);
+        }
+    }; 
+    
+    private final Handler encoderHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            Message logMsg = new Message();
+            String log  = null;
+            Packet pkt = new Packet(Protocol.SMSG_ENCODER_GET, null, (byte)0);
+            con.SendPacket(pkt);
+            logMsg = new Message();
+            log  = "SMSG_ENCODER_GET sent";
+            logMsg.what = YuniControl.MESSAGE_LOG;
+            logMsg.obj = log;
+            conStatusHandler.sendMessage(logMsg);
         }
     }; 
     public final PacketHandler packetHandler = new PacketHandler(conStatusHandler);
     
-	private final Connection con = new Connection(conStatusHandler);
-	
+    private final Connection con = new Connection(conStatusHandler);
+    
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -126,31 +142,31 @@ public class YuniControl extends Activity {
         setContentView(R.layout.main);
         context = this;
         try {
-			config.load();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		if(config.getBool(Config.CONF_BOOL_START_PROGRAM_AFTER_START))
-		{
-			// TODO
-		}  
-		if(config.getBool(Config.CONF_BOOL_SCREEN_ALWAYS_ON))
-		{
-			PowerManager pm = (PowerManager) getBaseContext().getSystemService(Context.POWER_SERVICE);
-			lock = pm.newWakeLock((PowerManager.SCREEN_BRIGHT_WAKE_LOCK), "YuniControl lock");
-			lock.acquire();
-		}
-		InitMain();
-		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-		registerReceiver(mReceiver, filter);
+            config.load();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        if(config.getBool(Config.CONF_BOOL_START_PROGRAM_AFTER_START))
+        {
+            // TODO
+        }  
+        if(config.getBool(Config.CONF_BOOL_SCREEN_ALWAYS_ON))
+        {
+            PowerManager pm = (PowerManager) getBaseContext().getSystemService(Context.POWER_SERVICE);
+            lock = pm.newWakeLock((PowerManager.SCREEN_BRIGHT_WAKE_LOCK), "YuniControl lock");
+            lock.acquire();
+        }
+        InitMain();
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mReceiver, filter);
     }
     public void onDestroy() 
     {
         super.onDestroy();       
         if(lock != null)
-        	lock.release();
+            lock.release();
         Disconnect(false);
         unregisterReceiver(mReceiver);
     }
@@ -160,7 +176,7 @@ public class YuniControl extends Activity {
         if ((keyCode == KeyEvent.KEYCODE_BACK))
         {
               if((state & STATE_TERMINAL) != 0)
-            	  Disconnect(true);
+                  Disconnect(true);
               else
                   finish();
               return true;
@@ -190,8 +206,8 @@ public class YuniControl extends Activity {
         log.close();
         if(resetUI)
         {
-        	setContentView(R.layout.main);
-        	InitMain();
+            setContentView(R.layout.main);
+            InitMain();
         }
         else
         {
@@ -201,33 +217,33 @@ public class YuniControl extends Activity {
     
     private void InitMain()
     {
-    	Button button = (Button) findViewById(R.id.Connect_b);
+        Button button = (Button) findViewById(R.id.Connect_b);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                con.init();
                if(con.GetConType() == Connection.CONNECTION_BLUETOOTH)
-            	   InitBluetooth();
+                   InitBluetooth();
                else
                {
-            	   //TODO
+                   //TODO
                }
             }
         });
         button = (Button) findViewById(R.id.Reload_b);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-            	String text = null;
-            	try {
-					if(config.load())
-						text = "Config loaded.";
-					else
-						text = "Error loading config file.";
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				 Toast.makeText(context, text,
-		                    Toast.LENGTH_SHORT).show();
+                String text = null;
+                try {
+                    if(config.load())
+                        text = "Config loaded.";
+                    else
+                        text = "Error loading config file.";
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                 Toast.makeText(context, text,
+                            Toast.LENGTH_SHORT).show();
             }
            
         });
@@ -248,7 +264,7 @@ public class YuniControl extends Activity {
     
     private void InitBluetooth()
     {
-    	setContentView(R.layout.device_list);
+        setContentView(R.layout.device_list);
         if (con.GetAdapter() == null)
             ShowAlert("This device does not have bluetooth adapter");
         else if (!con.GetAdapter().isEnabled())
@@ -303,7 +319,7 @@ public class YuniControl extends Activity {
             return;
         }
         if (con.GetAdapter().isDiscovering())
-        	con.GetAdapter().cancelDiscovery();
+            con.GetAdapter().cancelDiscovery();
         
         mArrayAdapter = new ArrayAdapter<String>(this, R.layout.device_name);
         mPairedDevices = new ArrayAdapter<String>(this, R.layout.device_name);
@@ -330,8 +346,8 @@ public class YuniControl extends Activity {
     
     private void Connect(View v)
     {
-    	log.init(config.getBool(Config.CONF_BOOL_LOG_TIME));
-    	
+        log.init(config.getBool(Config.CONF_BOOL_LOG_TIME));
+        
         EnableConnect(false);
         // Cancel discovery because it's costly and we're about to connect
         con.GetAdapter().cancelDiscovery();
@@ -415,35 +431,35 @@ public class YuniControl extends Activity {
     
     private void InitTerminal()
     {
-    	state |= STATE_TERMINAL;
-    	setContentView(R.layout.terminal);
-    	
-    	Thread th = new Thread (new Runnable()
+        state |= STATE_TERMINAL;
+        setContentView(R.layout.terminal);
+        
+        Thread th = new Thread (new Runnable()
         {
             public void run()
             {
-            	try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-            	pingHandler.sendEmptyMessage(0);
-                /*while(true)
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                pingHandler.sendEmptyMessage(0);
+                while(true)
                 {
-                	pingHandler.sendEmptyMessage(0);
+                    encoderHandler.sendEmptyMessage(0);
                     try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-                } */
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                } 
             }
         });
-    	th.start();  
+        th.start();  
 
-    	autoScrollThread = new Thread (new Runnable()
+        autoScrollThread = new Thread (new Runnable()
         {
             public void run()
             {
