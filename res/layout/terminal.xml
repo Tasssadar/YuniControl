@@ -10,12 +10,14 @@
       android:fadingEdge="none"
       android:fillViewport="true">         
     <TextView android:id="@+id/output"
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text=""
         android:padding="3px"
         android:textColor="#fff"
         android:maxLines="500"
     /> 
-    </ScrollView>   
+    
+</ScrollView>
+       
 </RelativeLayout>

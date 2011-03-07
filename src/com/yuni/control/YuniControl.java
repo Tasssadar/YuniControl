@@ -1,6 +1,9 @@
 package com.yuni.control;
 
+
+import java.io.File;
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Set;
 
 import android.app.Activity;
@@ -20,6 +23,9 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -29,6 +35,9 @@ import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.yuni.control.AI.*;
+
 
 public class YuniControl extends Activity {
     
@@ -47,6 +56,7 @@ public class YuniControl extends Activity {
     
     private byte btTurnOn = 0;
     private View connectView = null;
+    public File curFolder = null; 
     
     public static final String EXTRA_DEVICE_ADDRESS = "device_address";
     public static final byte MESSAGE_DATA = 6;
@@ -55,6 +65,7 @@ public class YuniControl extends Activity {
     
     private WakeLock lock = null;
     private Thread autoScrollThread = null;
+    private WorldThread worldThread = null;
     private LogFile log = new LogFile();
 
     private final Handler conStatusHandler = new Handler() {
@@ -95,45 +106,40 @@ public class YuniControl extends Activity {
             }
         }
     };
-    private final Handler pingHandler = new Handler() {
-        public void handleMessage(Message msg) {
-            Message logMsg = new Message();
-            String log  = null;
-            
-            Packet pkt = new Packet(Protocol.SMSG_ENCODER_START, null, (byte)0);
-            con.SendPacket(pkt);
-            log = "SMSG_ENCODER_START sent";
-            logMsg.what = YuniControl.MESSAGE_LOG;
-            logMsg.obj = log;
-            conStatusHandler.sendMessage(logMsg);
-            
-            byte[] dataMov = { (byte) 127, (byte)1 };
-            pkt.set(Protocol.SMSG_SET_MOVEMENT, dataMov, (byte)2);
-            con.SendPacket(pkt);
-            logMsg = new Message();
-            log  = "SMSG_SET_MOVEMENT sent";
-            logMsg.what = YuniControl.MESSAGE_LOG;
-            logMsg.obj = log;
-            conStatusHandler.sendMessage(logMsg);
-        }
-    }; 
-    
-    private final Handler encoderHandler = new Handler() {
-        public void handleMessage(Message msg) {
-            Message logMsg = new Message();
-            String log  = null;
-            Packet pkt = new Packet(Protocol.SMSG_ENCODER_GET, null, (byte)0);
-            con.SendPacket(pkt);
-            logMsg = new Message();
-            log  = "SMSG_ENCODER_GET sent";
-            logMsg.what = YuniControl.MESSAGE_LOG;
-            logMsg.obj = log;
-            conStatusHandler.sendMessage(logMsg);
-        }
-    }; 
+
     public final PacketHandler packetHandler = new PacketHandler(conStatusHandler);
     
     private final Connection con = new Connection(conStatusHandler);
+    
+    private class WorldThread extends Thread {
+        boolean stop;
+
+        public WorldThread() {
+            stop = false;
+        }
+
+        public void run()
+        {
+             long lastTime = Calendar.getInstance().getTimeInMillis();
+             while(!stop)
+             {
+                 long thisTime = Calendar.getInstance().getTimeInMillis();
+                 World.getInstance().Update((int)(thisTime - lastTime));
+                 try {
+                    Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                lastTime = thisTime;
+             }
+        }
+      
+        public void cancel()
+        {
+            stop = true;
+        }    
+    }
     
     /** Called when the activity is first created. */
     @Override
@@ -181,8 +187,62 @@ public class YuniControl extends Activity {
                   finish();
               return true;
         }
+        else if(keyCode == KeyEvent.KEYCODE_MENU)
+        {
+            if((state & STATE_TERMINAL) != 0)
+                return super.onKeyDown(keyCode, event);
+            moveTaskToBack(true);
+            return true;
+        }
         return super.onKeyDown(keyCode, event);
     }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        prepareMenu(menu);
+        return true;
+    }
+    @Override
+    public boolean onPrepareOptionsMenu (Menu menu)
+    {
+        prepareMenu(menu);
+        return true;
+    }
+    
+    void prepareMenu(Menu menu)
+    {
+        if((state & STATE_TERMINAL) != 0 && menu.findItem(R.id.execute) == null)
+        {
+            MenuInflater inflater = getMenuInflater();
+            menu.clear();
+            inflater.inflate(R.menu.menu, menu);
+        }
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.execute:
+                final AlertDialog.Builder builder2 = new AlertDialog.Builder(context);
+                curFolder = new File("/mnt/sdcard/YuniData/");
+                final CharSequence[] items = curFolder.list();
+                builder2.setTitle("Chose file");
+                builder2.setItems(items, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int item) {
+                        final CharSequence[] items = curFolder.list();
+                        File file = new File(curFolder, items[item].toString());
+                        if(!file.isFile())
+                            return;
+                        dialog.dismiss();
+                    }
+                });
+                final AlertDialog alert = builder2.create();
+                alert.show();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+    
     void ShowAlert(CharSequence text)
     {
         AlertDialog.Builder builder2 = new AlertDialog.Builder(context);
@@ -204,6 +264,10 @@ public class YuniControl extends Activity {
         con.disconnect();
         dialog = null;
         log.close();
+        if(worldThread != null)
+            worldThread.cancel();
+        World.destroy();
+        
         if(resetUI)
         {
             setContentView(R.layout.main);
@@ -395,6 +459,7 @@ public class YuniControl extends Activity {
         listView.setEnabled(enable);
         listView = (ListView) findViewById(R.id.paired_devices);
         listView.setEnabled(enable);
+
     }
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode != Connection.REQUEST_ENABLE_BT)
@@ -433,31 +498,6 @@ public class YuniControl extends Activity {
     {
         state |= STATE_TERMINAL;
         setContentView(R.layout.terminal);
-        
-        Thread th = new Thread (new Runnable()
-        {
-            public void run()
-            {
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                pingHandler.sendEmptyMessage(0);
-                while(true)
-                {
-                    encoderHandler.sendEmptyMessage(0);
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                } 
-            }
-        });
-        th.start();  
 
         autoScrollThread = new Thread (new Runnable()
         {
@@ -486,6 +526,10 @@ public class YuniControl extends Activity {
         });
         autoScrollThread.setPriority(1);
         autoScrollThread.start();
+        World.destroy();
+        World.getInstance().Initiate();
+        worldThread = new WorldThread();
+        worldThread.start();
     }
     private final Handler scrollHandler = new Handler() {
         @Override
