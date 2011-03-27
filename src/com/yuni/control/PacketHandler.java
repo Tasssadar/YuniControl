@@ -1,5 +1,7 @@
 package com.yuni.control;
 
+import com.yuni.control.AI.World;
+
 import android.os.Handler;
 import android.os.Message;
 
@@ -31,6 +33,18 @@ class PacketHandler
             case Protocol.CMSG_ENCODER_SEND:
                 log = "Encoders left: " + packet.readUInt16() + " right: " + packet.readUInt16();
                 break;
+            case Protocol.CMSG_BUTTON_STATUS:
+            	short adr = packet.readByte();
+            	short status = packet.readByte();
+                log = "Button adr " + adr + " status " + status;
+                if(adr == 0x01 && status == 0x01)
+                	World.getInstance().GetYunimin().Start();
+                break;
+            case Protocol.CMSG_ENCODER_EVENT_DONE:
+            	byte eventID = packet.get((byte) 0);
+            	log = "Encoder event " + eventID + " passed";
+            	World.getInstance().GetYunimin().EventHappened(eventID);
+            	break;
             default:
                 log = "Packet with opcode " + packet.getOpcode() + " and lenght " + packet.getLenght() + " recieved";
                 break;

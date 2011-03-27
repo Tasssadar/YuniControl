@@ -21,6 +21,16 @@ public class Protocol
     public final static byte SMSG_ENCODER_GET         = 0x12;
     public final static byte CMSG_ENCODER_SEND        = 0x13;
     public final static byte SMSG_ENCODER_STOP        = 0x14;
+    public final static byte SMSG_ENCODER_SET_EVENT   = 0x15;
+    public final static byte CMSG_ENCODER_EVENT_DONE  = 0x16;
+    public final static byte CMSG_LASER_GATE_STAT     = 0x17;
+    public final static byte SMSG_LASER_GATE_SET      = 0x18;
+    public final static byte CMSG_BUTTON_STATUS       = 0x19;
+    public final static byte SMSG_ADD_STATE           = 0x20;
+    public final static byte SMSG_REMOVE_STATE        = 0x21;
+    public final static byte SMSG_STOP                = 0x22;
+    public final static byte CMSG_LOCKED              = 0x23;
+    public final static byte SMSG_UNLOCK              = 0x24;
     
     public Protocol(Handler handler)
     {
@@ -48,14 +58,14 @@ public class Protocol
         
         while(dataItr < lenght)
         {
-            if(status == 0 && lenght-dataItr < 3)
+            if(status == 0 && lenght-dataItr < 4)
             {
                 for(byte y = 0; y+dataItr < lenght; ++y, ++bytesToNextItr)
                     bytesToNext[y] = data[dataItr+y];
                 break;
             }
             
-            if(status == 0 && data[dataItr] == 1 && lenght-dataItr >= 3) // handle new packet
+            if(status == 0 && data[dataItr] == (byte)0xFF && lenght-dataItr >= 4) // handle new packet
             {
                 tmpPacket = new Packet((byte)0, null, (byte)0);
                 status = 1;
@@ -64,15 +74,15 @@ public class Protocol
                     packetData = new byte[data[dataItr+2]];
                 
                 byte y = 0;
-                for(; y < data[dataItr+2] && y+dataItr+3 < lenght; ++y)
-                    packetData[y] = data[y+dataItr+3];
-                tmpPacket.set(data[dataItr+1], packetData, data[dataItr+2]);
+                for(; y < data[dataItr+2] && y+dataItr+4 < lenght; ++y)
+                    packetData[y] = data[y+dataItr+4];
+                tmpPacket.set(data[dataItr+3], packetData, data[dataItr+2]);
                 //complete packet
                 if(y >= data[dataItr+2])
                 {
                     packetBuffer.add(tmpPacket);
                     status = 0;
-                    dataItr += 3+data[dataItr+2];
+                    dataItr += 4+data[dataItr+2];
                     continue;
                 }
                 else
@@ -105,67 +115,3 @@ public class Protocol
     private byte bytesToNextItr;
     private PacketHandler packetHandler;
 };
-
-class Packet
-{
-    public Packet(byte opcode, byte[] data, byte lenght)
-    {
-        //if(data != null)
-            set(opcode, data, lenght);
-    }
-    
-    public short readByte()
-    {
-        if(m_readPos >= m_lenght)
-            return 0;
-        ++m_readPos;
-        return (short)(0xFF & ((int)m_data[m_readPos-1]));
-    }
-    
-    public int readUInt16()
-    {
-        if(m_readPos+1 >= m_lenght)
-            return 0;
-        int firstByte = (0xFF & ((int)m_data[m_readPos]));
-        int secondByte = (0xFF & ((int)m_data[m_readPos+1]));
-        m_readPos += 2;
-        return  (firstByte << 8 | secondByte);
-    }
-    
-    public String readString()
-    {
-        if(m_data[m_readPos] != 2)
-            return "";
-        String read = "";
-        for(++m_readPos; m_readPos < m_lenght; ++m_readPos)
-        {
-            if(m_data[m_readPos] == 3)
-            {
-                ++m_readPos;
-                break;
-            }
-            read += (char)m_data[m_readPos];
-        }
-        return read;
-    }
-    
-    public byte get(byte pos) { return (pos >= m_lenght) ? 0 : m_data[pos]; }
-    public void set(byte opcode, byte[] data, byte lenght)
-    {
-        m_opcode = opcode;
-        if(data != null)
-            m_data = data.clone();
-        else
-            m_data = null;
-        m_lenght = lenght;
-        m_readPos = 0;
-    }
-    public boolean hasData() { return (m_data != null); }
-    public byte getOpcode() { return m_opcode; }
-    public byte getLenght() { return m_lenght; }
-    
-    private byte m_opcode;
-    private byte[] m_data;
-    private byte m_lenght;
-    private byte m_readPos;
-}

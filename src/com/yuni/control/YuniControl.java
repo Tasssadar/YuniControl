@@ -69,8 +69,8 @@ public class YuniControl extends Activity {
     private LogFile log = new LogFile();
 
     private final Handler conStatusHandler = new Handler() {
-        public void handleMessage(Message msg) {
-        
+        public void handleMessage(Message msg)
+        {
             switch(msg.what)
             {
                 case BluetoothChatService.MESSAGE_STATE_CHANGE:
@@ -103,6 +103,15 @@ public class YuniControl extends Activity {
                     else if(msg.arg1 == BluetoothChatService.CONNECTION_FAILED)
                         EnableConnect(true);
                     break;
+                case MESSAGE_DATA:
+                    if(msg.obj == null)
+                        return;
+                    Packet pkt = (Packet)msg.obj; 
+                    log.writeString("Sending packet " + pkt.getOpcode() + " lenght " + pkt.getLenght());
+                    if(pkt.getOpcode() == Protocol.SMSG_ENCODER_SET_EVENT)
+                        log.writeString("Encoder event " + pkt.get((byte) 0) + " setted");
+                    con.SendPacket(pkt);
+                    break;
             }
         }
     };
@@ -125,13 +134,14 @@ public class YuniControl extends Activity {
              {
                  long thisTime = Calendar.getInstance().getTimeInMillis();
                  World.getInstance().Update((int)(thisTime - lastTime));
-                 try {
-                    Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                lastTime = thisTime;
+                 try
+                 {
+                     Thread.sleep(50);
+                 } catch (InterruptedException e) {
+                     // TODO Auto-generated catch block
+                     e.printStackTrace();
+                 }
+                 lastTime = thisTime;
              }
         }
       
@@ -306,11 +316,23 @@ public class YuniControl extends Activity {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
+                SetStartPosText();
                  Toast.makeText(context, text,
                             Toast.LENGTH_SHORT).show();
             }
            
         });
+        SetStartPosText();
+        
+    }
+    
+    private void SetStartPosText()
+    {
+        TextView textConf = (TextView)findViewById(R.id.config_status_t);
+        if(textConf == null)
+            return;
+        textConf.setText("Start Position: ");
+        textConf.append(config.getByte(Config.CONF_BYTE_START_POS) == World.STARTPOS_RED ? "red" : "blue");
     }
     
     final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -527,6 +549,7 @@ public class YuniControl extends Activity {
         autoScrollThread.setPriority(1);
         autoScrollThread.start();
         World.destroy();
+        World.CreateInstance(conStatusHandler, config.getByte(Config.CONF_BYTE_START_POS));
         World.getInstance().Initiate();
         worldThread = new WorldThread();
         worldThread.start();

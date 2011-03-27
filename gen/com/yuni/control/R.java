@@ -16,11 +16,12 @@ public final class R {
     public static final class id {
         public static final int Connect_b=0x7f060005;
         public static final int Reload_b=0x7f060006;
-        public static final int ScrollView01=0x7f060007;
+        public static final int ScrollView01=0x7f060008;
         public static final int button_scan=0x7f060004;
-        public static final int execute=0x7f060009;
+        public static final int config_status_t=0x7f060007;
+        public static final int execute=0x7f06000a;
         public static final int new_devices=0x7f060003;
-        public static final int output=0x7f060008;
+        public static final int output=0x7f060009;
         public static final int paired_devices=0x7f060001;
         public static final int title_new_devices=0x7f060002;
         public static final int title_paired_devices=0x7f060000;

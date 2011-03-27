@@ -3,6 +3,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import com.yuni.control.AI.World;
+
 public class Config
 {
     public final static byte CONF_BYTE_CONNECT_METHOD = 0;
@@ -10,8 +12,9 @@ public class Config
     public final static byte CONF_BOOL_START_PROGRAM_AFTER_START = 2;
     public final static byte CONF_STRING_BLUETOOTH_MAC = 3;
     public final static byte CONF_BOOL_LOG_TIME = 4;
+    public final static byte CONF_BYTE_START_POS = 5;
     
-    public final static byte MAX_CONFIG = 5;
+    public final static byte MAX_CONFIG = 6;
 
     public Config()
     {
@@ -94,6 +97,8 @@ public class Config
                 addStringVal(CONF_STRING_BLUETOOTH_MAC, val);
             else if(index.contentEquals("LogTime"))
                 addBoolVal(CONF_BOOL_LOG_TIME, val);
+            else if(index.contentEquals("StartPos"))
+                addByteVal(CONF_BYTE_START_POS, val);
         }
         loaded = true;
         return true;
@@ -120,16 +125,24 @@ public class Config
         addBoolVal(CONF_BOOL_START_PROGRAM_AFTER_START, "false");
         addStringVal(CONF_STRING_BLUETOOTH_MAC, "");
         addBoolVal(CONF_BOOL_LOG_TIME, "true");
+        addByteVal(CONF_BYTE_START_POS, World.STARTPOS_BLUE);
     }
     
     public void addBoolVal(byte index, String val)
     {
         boolVals[index] = Boolean.parseBoolean(val);
     }
+    
     public void addByteVal(byte index, String val)
     {
         byteVals[index] = Byte.valueOf(val);
     }
+    
+    public void addByteVal(byte index, byte val)
+    {
+        byteVals[index] = val;
+    }
+    
     public void addStringVal(byte index, String val)
     {
         stringVals[index] = val;

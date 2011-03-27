@@ -71,12 +71,14 @@ public class Connection
     {
         if(con_type == CONNECTION_BLUETOOTH)
         {
-            byte[] data = new byte[pkt.getLenght()+3];
-            data[0] = 1;
-            data[1] = pkt.getOpcode();
-            data[2] = pkt.getLenght();
+            byte[] data = new byte[pkt.getLenght()+4];
+            data[0] = (byte)0xFF;      // start
+            data[1] = 0x01;            // address
+            data[2] = pkt.getLenght(); // data lenght
+            data[3] = pkt.getOpcode(); // opcode
+            
             for(byte y = 0; y < pkt.getLenght(); ++y)
-                data[y+3] = pkt.get(y);
+                data[y+4] = pkt.get(y);
             bluetoothService.write(data);
         }
         else
