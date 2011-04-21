@@ -340,7 +340,7 @@ public class BluetoothChatService {
                     Log.e(TAG, "unable to close() socket during connection failure", e2);
                 }
                 // Start the service over to restart listening mode
-                BluetoothChatService.this.start();
+                //BluetoothChatService.this.start();
                 return;
             }
 
@@ -395,9 +395,10 @@ public class BluetoothChatService {
             // Keep listening to the InputStream while connected
             while (true) {
                 try {
+                	 if(mmInStream.available() == 0)
+                		 continue;
                     // Read from the InputStream
                     bytes = mmInStream.read(buffer);
-
                     // Send the obtained bytes to the UI Activity
                     mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer.clone())
                             .sendToTarget();

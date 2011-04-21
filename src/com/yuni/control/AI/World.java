@@ -69,6 +69,13 @@ public class World
         mHandler.sendMessage(msg);
     }
     
+    public void end()
+    {
+    	 Message msg = new Message();
+         msg.what = YuniControl.MESSAGE_STOP;
+         mHandler.sendMessage(msg);
+    }
+    
     public byte GetStartPos()
     {
         return mStartPos;

@@ -53,7 +53,7 @@ public class Packet
     public void writeUInt16(int data)
     {
         m_data[m_writePos++] = (byte)(data >> 8);
-        m_data[m_writePos++] = (byte)(data & 0xFF);
+        m_data[m_writePos++] = (byte) ((byte)data & 0xFF);
     }
     
     public byte get(byte pos) { return (pos >= m_lenght) ? 0 : m_data[pos]; }
@@ -62,8 +62,11 @@ public class Packet
         m_opcode = opcode;
         if(data != null)
             m_data = data.clone();
+        else if(lenght != 0)
+            m_data = new byte[lenght];
         else
             m_data = null;
+        
         m_lenght = lenght;
         m_readPos = 0;
     }

@@ -50,6 +50,7 @@ public class Connection
     {
         bluetoothService.start();
         bluetoothService.connect(device);
+        
     }
     
     public void disconnect()

@@ -49,7 +49,7 @@ public class YuniControl extends Activity {
     public final static Config config = new Config();
     public int state;
     
-    private ArrayAdapter<String> mArrayAdapter;
+    private ArrayAdapter<String> mArrayAdapter = null;
     private ArrayAdapter<String> mPairedDevices;
     
     private Context context;
@@ -61,6 +61,7 @@ public class YuniControl extends Activity {
     public static final String EXTRA_DEVICE_ADDRESS = "device_address";
     public static final byte MESSAGE_DATA = 6;
     public static final byte MESSAGE_LOG = 7;
+    public static final byte MESSAGE_STOP = 8;
     public ProgressDialog dialog;
     
     private WakeLock lock = null;
@@ -76,24 +77,17 @@ public class YuniControl extends Activity {
                 case BluetoothChatService.MESSAGE_STATE_CHANGE:
                     if(msg.arg1 != BluetoothChatService.STATE_CONNECTED)
                         break;
-                    log.writeString("Connection succesful!");
+                    log("Connection succesful!");
                     dialog.dismiss();
                     state |= STATE_CONNECTED;
                     InitTerminal();
                     break;
                 case MESSAGE_LOG:
-                    final String buffer = (String)msg.obj;
-                    log.writeString(buffer);
-                    if((state & STATE_TERMINAL) != 0)
-                    {
-                        TextView text = (TextView) findViewById(R.id.output);
-                        text.append(buffer + "\r\n");
-                        state |= STATE_SCROLL;
-                    }
+                    log((String)msg.obj);
                     break;
                 case BluetoothChatService.MESSAGE_TOAST:
                     final String text = msg.getData().getString(BluetoothChatService.TOAST);
-                    log.writeString("Toast: " + text);
+                    log("Toast: " + text);
                     if(text == null)
                         break;
                     Toast.makeText(context, text,
@@ -104,18 +98,38 @@ public class YuniControl extends Activity {
                         EnableConnect(true);
                     break;
                 case MESSAGE_DATA:
+                {
                     if(msg.obj == null)
                         return;
                     Packet pkt = (Packet)msg.obj; 
-                    log.writeString("Sending packet " + pkt.getOpcode() + " lenght " + pkt.getLenght());
+                    log("Sending packet " + Protocol.opcodeToString(pkt.getOpcode()) + " lenght " + pkt.getLenght());
                     if(pkt.getOpcode() == Protocol.SMSG_ENCODER_SET_EVENT)
-                        log.writeString("Encoder event " + pkt.get((byte) 0) + " setted");
+                        log("Encoder event " + pkt.get((byte) 0) + " setted");
                     con.SendPacket(pkt);
                     break;
+                }
+                case MESSAGE_STOP:
+                {
+                    pingThread.cancel();
+                    log("Match end, stopping...");
+                    Packet pkt = new Packet(Protocol.SMSG_STOP, null, (byte)0);
+                    con.SendPacket(pkt);
+                    break;
+                }
             }
         }
     };
-
+    
+    private void log(String text)
+    {
+        log.writeString(text);
+        if((state & STATE_TERMINAL) != 0)
+        {
+            TextView text_view = (TextView) findViewById(R.id.output);
+            text_view.append(text + "\r\n");
+            state |= STATE_SCROLL;
+        }
+    }
     public final PacketHandler packetHandler = new PacketHandler(conStatusHandler);
     
     private final Connection con = new Connection(conStatusHandler);
@@ -150,6 +164,36 @@ public class YuniControl extends Activity {
             stop = true;
         }    
     }
+    Packet pingPacket = new Packet(Protocol.SMSG_PING, null, (byte)0);
+    
+    private class PingThread extends Thread {
+        boolean stop;
+
+        public PingThread() {
+            stop = false;
+        }
+
+        public void run()
+        {
+             while(!stop)
+             {
+                 try
+                 {
+                     Thread.sleep(500);
+                 } catch (InterruptedException e) {
+                     // TODO Auto-generated catch block
+                     e.printStackTrace();
+                 }
+                 con.SendPacket(pingPacket);
+             }
+        }
+      
+        public void cancel()
+        {
+            stop = true;
+        }    
+    }
+    PingThread pingThread = null;
     
     /** Called when the activity is first created. */
     @Override
@@ -275,7 +319,12 @@ public class YuniControl extends Activity {
         dialog = null;
         log.close();
         if(worldThread != null)
+        {
             worldThread.cancel();
+            pingThread.cancel();
+            pingThread = null;
+            worldThread = null;
+        }
         World.destroy();
         
         if(resetUI)
@@ -339,7 +388,7 @@ public class YuniControl extends Activity {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             // When discovery finds a device
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+            if (BluetoothDevice.ACTION_FOUND.equals(action) && mArrayAdapter != null) {
                 // Get the BluetoothDevice object from the Intent
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // Add the name and address to an array adapter to show in a ListView
@@ -441,7 +490,7 @@ public class YuniControl extends Activity {
         // Get the device MAC address, which is the last 17 chars in the View
         String info = ((TextView) v).getText().toString();
         String address = info.substring(info.length() - 17);
-        log.writeString("Attempting to connect to " + address + " ...");
+        log("Attempting to connect to " + address + " ...");
 
         // Create the result Intent and include the MAC address
         Intent intent = new Intent();
@@ -551,6 +600,8 @@ public class YuniControl extends Activity {
         World.destroy();
         World.CreateInstance(conStatusHandler, config.getByte(Config.CONF_BYTE_START_POS));
         World.getInstance().Initiate();
+        pingThread = new PingThread();
+        pingThread.start();
         worldThread = new WorldThread();
         worldThread.start();
     }
