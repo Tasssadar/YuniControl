@@ -44,10 +44,10 @@ public class YuniControl extends Activity {
     public static final byte STATE_CONNECTED = 0x01;
     public static final byte STATE_TERMINAL  = 0x02;
     public static final byte STATE_SCROLL    = 0x04;
-    
+    public static final byte STATE_RESTARTING= 0x08;
     
     public final static Config config = new Config();
-    public int state;
+    public static int state;
     
     private ArrayAdapter<String> mArrayAdapter = null;
     private ArrayAdapter<String> mPairedDevices;
@@ -101,16 +101,21 @@ public class YuniControl extends Activity {
                 {
                     if(msg.obj == null)
                         return;
-                    Packet pkt = (Packet)msg.obj; 
-                    log("Sending packet " + Protocol.opcodeToString(pkt.getOpcode()) + " lenght " + pkt.getLenght());
-                    if(pkt.getOpcode() == Protocol.SMSG_ENCODER_SET_EVENT)
-                        log("Encoder event " + pkt.get((byte) 0) + " setted");
-                    con.SendPacket(pkt);
+                    if(msg.arg1 == 0)
+                    {
+	                    Packet pkt = (Packet)msg.obj; 
+	                    log("Sending packet " + Protocol.opcodeToString(pkt.getOpcode()) + " lenght " + pkt.getLenght());
+	                    if(pkt.getOpcode() == Protocol.SMSG_ENCODER_SET_EVENT)
+	                        log("Encoder event " + pkt.get((byte) 0) + " setted");
+	                    con.SendPacket(pkt);
+                    }
+                    else
+                    	con.SendBytes((byte[])msg.obj);
                     break;
                 }
                 case MESSAGE_STOP:
                 {
-                    pingThread.cancel();
+                    pingThread.pause(true);
                     log("Match end, stopping...");
                     Packet pkt = new Packet(Protocol.SMSG_STOP, null, (byte)0);
                     con.SendPacket(pkt);
@@ -168,9 +173,11 @@ public class YuniControl extends Activity {
     
     private class PingThread extends Thread {
         boolean stop;
+        boolean pause;
 
         public PingThread() {
             stop = false;
+            pause = false;
         }
 
         public void run()
@@ -184,14 +191,20 @@ public class YuniControl extends Activity {
                      // TODO Auto-generated catch block
                      e.printStackTrace();
                  }
-                 con.SendPacket(pingPacket);
+                 if(!pause)
+                     con.SendPacket(pingPacket);
              }
         }
       
         public void cancel()
         {
             stop = true;
-        }    
+        }
+        
+        public void pause(boolean val)
+        {
+        	pause = val;
+        }
     }
     PingThread pingThread = null;
     
@@ -264,7 +277,7 @@ public class YuniControl extends Activity {
     
     void prepareMenu(Menu menu)
     {
-        if((state & STATE_TERMINAL) != 0 && menu.findItem(R.id.execute) == null)
+        if((state & STATE_TERMINAL) != 0 && menu.findItem(R.id.restart_yuni) == null)
         {
             MenuInflater inflater = getMenuInflater();
             menu.clear();
@@ -275,23 +288,39 @@ public class YuniControl extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-            case R.id.execute:
-                final AlertDialog.Builder builder2 = new AlertDialog.Builder(context);
-                curFolder = new File("/mnt/sdcard/YuniData/");
-                final CharSequence[] items = curFolder.list();
-                builder2.setTitle("Chose file");
-                builder2.setItems(items, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int item) {
-                        final CharSequence[] items = curFolder.list();
-                        File file = new File(curFolder, items[item].toString());
-                        if(!file.isFile())
-                            return;
-                        dialog.dismiss();
-                    }
-                });
-                final AlertDialog alert = builder2.create();
-                alert.show();
+            case R.id.restart_yuni:
+            	state |= STATE_RESTARTING;
+            	pingThread.pause(true);
+            	
+            	byte[] stop = {0x74, 0x7E, 0x7A, 0x33};
+            	con.SendBytes(stop);
+            	log("Stopping robot...");
+            	
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                con.SendBytes(stop);
+                try {
+                    Thread.sleep(70);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                byte[] start = {0x11};
+                con.SendBytes(start);
+            	log("Sending start command");
+            	pingThread.pause(false);
+            	state &= ~(STATE_RESTARTING);
+            	World.getInstance().GetYunimin().Reset();
+            	log("Yunimin script restarted");
                 return true;
+            case R.id.restart_program:
+            	World.getInstance().GetYunimin().Reset();
+            	log("Yunimin script restarted");
+            	return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -541,7 +570,6 @@ public class YuniControl extends Activity {
             switch(btTurnOn)
             {
                 case 1:
-                    
                     FindDevices();
                     break;
                 case 2:

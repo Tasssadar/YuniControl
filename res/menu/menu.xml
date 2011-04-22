@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/execute"
-          android:title="Execute data file" />    
+    <item android:id="@+id/restart_yuni"
+          android:title="Restart yunimin" />
+    <item android:id="@+id/restart_program"
+          android:title="Restart program" />    
 </menu>

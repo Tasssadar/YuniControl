@@ -60,12 +60,12 @@ public class Protocol
         
         while(dataItr < lenght)
         {
-            if(status == 0 && lenght-dataItr < 4)
+            /*if(status == 0 && lenght-dataItr < 4)
             {
                 for(byte y = 0; y+dataItr < lenght; ++y, ++bytesToNextItr)
                     bytesToNext[y] = data[dataItr+y];
                 break;
-            }
+            }*/
             
             if(status == 0 && data[dataItr] == (byte)0xFF && lenght-dataItr >= 4) // handle new packet
             {
@@ -101,6 +101,7 @@ public class Protocol
                 //for(; y < data[dataItr+2] && y+dataItr+3 < lenght; ++y)
                     //packetData[y] = data[y+dataItr+3];
             }
+            ++dataItr;
         }
         while(!packetBuffer.isEmpty())
         {

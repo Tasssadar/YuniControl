@@ -10,8 +10,6 @@ public class Yunimin extends WorldObject
     private byte waitEventID;
     private Packet pktEvent;
     private Packet pktMove;
-    private static final short TIMER_DISTANCE_CHECK = 300;
-    private short timerDistance;
     private int timerEnd;
     private byte flags;
     private boolean end;
@@ -32,6 +30,8 @@ public class Yunimin extends WorldObject
     private final static int BRUSHES_UP          = 650;
     private final static int BRUSHES_DOWN        = 0;
     
+    private final static byte routeNodes = 8;
+    
     private static final routeNode route[]=
     {
         // TODO fill in
@@ -42,22 +42,27 @@ public class Yunimin extends WorldObject
         new routeNode(WorldObject.MOVE_FORWARD, 1200, (byte) 127, (byte) 0),
         new routeNode(WorldObject.MOVE_LEFT,    400,  (byte) 127, SPEC_ACT_CHECK_FOR_DISC), // 4
         new routeNode(WorldObject.MOVE_FORWARD, 4500, (byte) 127, SPEC_ACT_CHECK_FOR_DISC), // 5
-        //new routeNode(WorldObject.MOVE_LEFT, 446, (byte) 127, (byte) 0),
+        
+        new routeNode(WorldObject.MOVE_BACKWARD,100,  (byte) 127, (byte) 0), // this one is calculated
+        new routeNode(WorldObject.MOVE_RIGHT,   500,  (byte) 127, (byte) 0),
+        new routeNode(WorldObject.MOVE_BACKWARD,1000, (byte) 127, SPEC_ACT_MATCH_END),
 
         new routeNode((byte) 0, (byte) 0, (byte) 0, (byte) 0),
     };
     
     Yunimin()
     {
-        m_type = World.TYPE_YUNIMIN;
+    	m_type = World.TYPE_YUNIMIN;
+        pktEvent = new Packet(Protocol.SMSG_ENCODER_SET_EVENT, null, (byte) 6);
+        pktMove = new Packet(Protocol.SMSG_SET_MOVEMENT, null, (byte) 2);
+    }
+    
+    public void Reset()
+    {
         started = false;
         node = 1;
         waitEventID = -1;
-        pktEvent = new Packet(Protocol.SMSG_ENCODER_SET_EVENT, null, (byte) 6);
-        pktMove = new Packet(Protocol.SMSG_SET_MOVEMENT, null, (byte) 2);
         end = false;
-        
-        timerDistance = TIMER_DISTANCE_CHECK;
         timerEnd = 90000;
         discIn = false;
     }
@@ -86,9 +91,10 @@ public class Yunimin extends WorldObject
             }
             case SPEC_ACT_MATCH_END:
             {
-                Packet pkt = new Packet(Protocol.SMSG_SET_SERVO_VAL, null, (byte)3);
+                Packet pkt = new Packet(Protocol.SMSG_SET_SERVO_VAL, null, (byte)4);
                 pkt.writeByte((short) (SERVO_BRUSHES | SERVO_REEL));
                 pkt.writeUInt16(BRUSHES_UP);
+                pkt.writeByte((byte) 0);
                 World.getInstance().SendPacket(pkt);
                 break;
             }
@@ -114,11 +120,11 @@ public class Yunimin extends WorldObject
     
     public void EventHappened(byte id)
     {
-        if(id == waitEventID && node+1 < route.length)
+    	if(route[node].specialAction != 0)
+            action(route[node].specialAction);
+        if(id == waitEventID && node < routeNodes)
         {
             waitEventID = -1;
-            if(route[node].specialAction != 0)
-                action(route[node].specialAction);
             ++node;
         }
     }
@@ -155,7 +161,10 @@ public class Yunimin extends WorldObject
             if(route[node].encTicks == 0)
             {
                 action(route[node].specialAction);
-                ++node;
+                if(node < routeNodes)
+                	++node;
+                else
+                	return;
             }
             waitEventID = node;
             pktEvent.setWritePos((byte) 0);
@@ -178,13 +187,6 @@ public class Yunimin extends WorldObject
             pktMove.writeByte(flags);
             World.getInstance().SendPacket(pktMove);
         }
-        
-        // crash protection
-        if(timerDistance <= diff)
-        {
-            // TODO implement
-            timerDistance = TIMER_DISTANCE_CHECK;
-        }else timerDistance -= diff;
     }
 }
 

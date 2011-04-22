@@ -88,12 +88,18 @@ public class Connection
         }
     }
     
+    public void SendBytes(byte[] data)
+    {
+    	bluetoothService.write(data);
+    }
+    
     private final Handler bluetoothHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             if(msg.what == BluetoothChatService.MESSAGE_READ && msg.obj != null)
             {
-                protocol.parseData((byte[])msg.obj, (byte) msg.arg1);
+            	if((YuniControl.state & YuniControl.STATE_RESTARTING) == 0) 
+            		protocol.parseData((byte[])msg.obj, (byte) msg.arg1);
             }
             else
             {
