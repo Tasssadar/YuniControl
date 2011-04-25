@@ -12,9 +12,9 @@ public class Config
     public final static byte CONF_BOOL_START_PROGRAM_AFTER_START = 2;
     public final static byte CONF_STRING_BLUETOOTH_MAC = 3;
     public final static byte CONF_BOOL_LOG_TIME = 4;
-    public final static byte CONF_BYTE_START_POS = 5;
+   // public final static byte CONF_BYTE_START_POS = 5;
     
-    public final static byte MAX_CONFIG = 6;
+    public final static byte MAX_CONFIG = 5;
 
     public Config()
     {
@@ -97,8 +97,8 @@ public class Config
                 addStringVal(CONF_STRING_BLUETOOTH_MAC, val);
             else if(index.contentEquals("LogTime"))
                 addBoolVal(CONF_BOOL_LOG_TIME, val);
-            else if(index.contentEquals("StartPos"))
-                addByteVal(CONF_BYTE_START_POS, val);
+         //   else if(index.contentEquals("StartPos"))
+       //         addByteVal(CONF_BYTE_START_POS, val);
         }
         loaded = true;
         return true;
@@ -125,7 +125,7 @@ public class Config
         addBoolVal(CONF_BOOL_START_PROGRAM_AFTER_START, "false");
         addStringVal(CONF_STRING_BLUETOOTH_MAC, "");
         addBoolVal(CONF_BOOL_LOG_TIME, "true");
-        addByteVal(CONF_BYTE_START_POS, World.STARTPOS_BLUE);
+       // addByteVal(CONF_BYTE_START_POS, World.STARTPOS_BLUE);
     }
     
     public void addBoolVal(byte index, String val)

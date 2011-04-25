@@ -17,12 +17,20 @@
             android:layout_centerHorizontal="true"
             android:layout_below="@id/Connect_b"
             android:text="Reload config"/> 
+        <Button android:id="@+id/Side_b"
+            android:layout_width="205px"
+            android:layout_height="50px"
+            android:layout_marginTop="10px"
+            android:layout_marginLeft="2px"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/Reload_b"
+            android:text="Change side"/> 
         <TextView android:id="@+id/config_status_t"
             android:layout_width="205px"
             android:layout_height="50px"
             android:layout_marginTop="10px"
             android:layout_marginLeft="2px"
             android:layout_centerHorizontal="true"
-            android:layout_below="@id/Reload_b"/> 
+            android:layout_below="@id/Side_b"/> 
 
 </RelativeLayout>

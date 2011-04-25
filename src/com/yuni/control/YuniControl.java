@@ -36,7 +36,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.yuni.control.AI.*;
+import com.yuni.control.AI.World;
 
 
 public class YuniControl extends Activity {
@@ -103,14 +103,14 @@ public class YuniControl extends Activity {
                         return;
                     if(msg.arg1 == 0)
                     {
-	                    Packet pkt = (Packet)msg.obj; 
-	                    log("Sending packet " + Protocol.opcodeToString(pkt.getOpcode()) + " lenght " + pkt.getLenght());
-	                    if(pkt.getOpcode() == Protocol.SMSG_ENCODER_SET_EVENT)
-	                        log("Encoder event " + pkt.get((byte) 0) + " setted");
-	                    con.SendPacket(pkt);
+                        Packet pkt = (Packet)msg.obj; 
+                        log("Sending packet " + Protocol.opcodeToString(pkt.getOpcode()) + " lenght " + pkt.getLenght());
+                        if(pkt.getOpcode() == Protocol.SMSG_ENCODER_SET_EVENT)
+                            log("Encoder event " + pkt.get((byte) 0) + " setted");
+                        con.SendPacket(pkt);
                     }
                     else
-                    	con.SendBytes((byte[])msg.obj);
+                        con.SendBytes((byte[])msg.obj);
                     break;
                 }
                 case MESSAGE_STOP:
@@ -203,7 +203,7 @@ public class YuniControl extends Activity {
         
         public void pause(boolean val)
         {
-        	pause = val;
+            pause = val;
         }
     }
     PingThread pingThread = null;
@@ -289,13 +289,13 @@ public class YuniControl extends Activity {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.restart_yuni:
-            	state |= STATE_RESTARTING;
-            	pingThread.pause(true);
-            	
-            	byte[] stop = {0x74, 0x7E, 0x7A, 0x33};
-            	con.SendBytes(stop);
-            	log("Stopping robot...");
-            	
+                state |= STATE_RESTARTING;
+                pingThread.pause(true);
+                
+                byte[] stop = {0x74, 0x7E, 0x7A, 0x33};
+                con.SendBytes(stop);
+                log("Stopping robot...");
+                
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
@@ -311,16 +311,16 @@ public class YuniControl extends Activity {
                 }
                 byte[] start = {0x11};
                 con.SendBytes(start);
-            	log("Sending start command");
-            	pingThread.pause(false);
-            	state &= ~(STATE_RESTARTING);
-            	World.getInstance().GetYunimin().Reset();
-            	log("Yunimin script restarted");
+                log("Sending start command");
+                pingThread.pause(false);
+                state &= ~(STATE_RESTARTING);
+                World.getInstance().GetYunimin().Reset();
+                log("Yunimin script restarted");
                 return true;
             case R.id.restart_program:
-            	World.getInstance().GetYunimin().Reset();
-            	log("Yunimin script restarted");
-            	return true;
+                World.getInstance().GetYunimin().Reset();
+                log("Yunimin script restarted");
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -400,6 +400,16 @@ public class YuniControl extends Activity {
             }
            
         });
+        button = (Button) findViewById(R.id.Side_b);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                int cur = getPreferences(0).getInt("startSide", World.STARTPOS_BLUE);
+                getPreferences(0).edit().putInt("startSide", 
+                        cur == World.STARTPOS_RED ? World.STARTPOS_BLUE : World.STARTPOS_RED).commit();
+                SetStartPosText();
+            }
+           
+        });
         SetStartPosText();
         
     }
@@ -410,7 +420,7 @@ public class YuniControl extends Activity {
         if(textConf == null)
             return;
         textConf.setText("Start Position: ");
-        textConf.append(config.getByte(Config.CONF_BYTE_START_POS) == World.STARTPOS_RED ? "red" : "blue");
+        textConf.append(getPreferences(0).getInt("startSide", World.STARTPOS_BLUE) == World.STARTPOS_RED ? "red" : "blue");
     }
     
     final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -626,7 +636,7 @@ public class YuniControl extends Activity {
         autoScrollThread.setPriority(1);
         autoScrollThread.start();
         World.destroy();
-        World.CreateInstance(conStatusHandler, config.getByte(Config.CONF_BYTE_START_POS));
+        World.CreateInstance(conStatusHandler, (byte) getPreferences(0).getInt("startSide", World.STARTPOS_BLUE));
         World.getInstance().Initiate();
         pingThread = new PingThread();
         pingThread.start();
