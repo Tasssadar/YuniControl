@@ -37,6 +37,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.yuni.control.AI.World;
+import com.yuni.control.Packet;
 
 
 public class YuniControl extends Activity {
@@ -320,6 +321,11 @@ public class YuniControl extends Activity {
             case R.id.restart_program:
                 World.getInstance().GetYunimin().Reset();
                 log("Yunimin script restarted");
+                return true;
+            case R.id.test:
+                Packet pkt = new Packet(Protocol.SMSG_TEST, null, (byte) 0);
+                con.SendPacket(pkt);
+                log("Test started");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

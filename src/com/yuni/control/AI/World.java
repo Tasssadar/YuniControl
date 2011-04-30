@@ -71,9 +71,17 @@ public class World
     
     public void end()
     {
-    	 Message msg = new Message();
+         Message msg = new Message();
          msg.what = YuniControl.MESSAGE_STOP;
          mHandler.sendMessage(msg);
+    }
+    
+    public void Log(String log)
+    {
+        Message msg = new Message();
+        msg.what = YuniControl.MESSAGE_LOG;
+        msg.obj = log;
+        mHandler.sendMessage(msg);
     }
     
     public byte GetStartPos()

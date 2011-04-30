@@ -25,6 +25,7 @@ public final class R {
         public static final int paired_devices=0x7f060001;
         public static final int restart_program=0x7f06000c;
         public static final int restart_yuni=0x7f06000b;
+        public static final int test=0x7f06000d;
         public static final int title_new_devices=0x7f060002;
         public static final int title_paired_devices=0x7f060000;
     }

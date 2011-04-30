@@ -72,7 +72,14 @@ class PacketHandler
                     unlock_msg.obj = unlock;
                     m_handler.sendMessage(unlock_msg);
                 }
+                World.getInstance().GetYunimin().sendMovement();
                 break;
+            }
+            case Protocol.CMSG_TEST_RESULT:
+            {
+            	log = "Test result:\r\n  Button: " + packet.readByte() + "\r\n  LeftEnc: " + packet.readUInt16() +
+            	    "\r\n RightEnc: " + packet.readUInt16();
+            	break;
             }
             default:
                 log = "Packet with opcode " + Protocol.opcodeToString(packet.getOpcode()) + " and lenght " + packet.getLenght() + " recieved";

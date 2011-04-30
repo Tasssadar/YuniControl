@@ -33,6 +33,9 @@ public class Protocol
     public final static byte SMSG_UNLOCK              = 0x24;
     public final static byte SMSG_CONNECT_REQ         = 0x25;                                                                                                          
     public final static byte CMSG_CONNECT_RES         = 0x26; 
+    public final static byte SMSG_TEST                = 0x27;
+    public final static byte CMSG_TEST_RESULT         = 0x28;
+    public final static byte SMSG_ENCODER_RM_EVENT    = 0x29;
     
     public Protocol(Handler handler)
     {
@@ -141,6 +144,9 @@ public class Protocol
             case SMSG_UNLOCK:                return "SMSG_UNLOCK";
             case SMSG_CONNECT_REQ:           return "SMSG_CONNECT_REQ";
             case CMSG_CONNECT_RES:           return "CMSG_CONNECT_RES";
+            case SMSG_TEST:                  return "SMSG_TEST";
+            case CMSG_TEST_RESULT:           return "CMSG_TEST_RESULT";
+            case SMSG_ENCODER_RM_EVENT:      return "SMSG_ENCODER_RM_EVENT";
         }
     }
     
