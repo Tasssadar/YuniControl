@@ -7,6 +7,8 @@ class WorldObject
     public static final byte MOVE_BACKWARD = 0x02; 
     public static final byte MOVE_LEFT     = 0x04; 
     public static final byte MOVE_RIGHT    = 0x08; 
+    public static final byte MOVE_LEFT_WHEEL= 0x10; 
+    public static final byte MOVE_RIGHT_WHEEL= 0x20; 
     
     public WorldObject()
     {

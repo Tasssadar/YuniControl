@@ -41,11 +41,14 @@ import com.yuni.control.Packet;
 
 
 public class YuniControl extends Activity {
-    
-    public static final byte STATE_CONNECTED = 0x01;
+
+	public static final String ButtonAddreess = "00:12:F3:04:A9:EB";
+	public static final byte STATE_CONNECTED = 0x01;
     public static final byte STATE_TERMINAL  = 0x02;
     public static final byte STATE_SCROLL    = 0x04;
     public static final byte STATE_RESTARTING= 0x08;
+    public static final byte STATE_CONNECTED1 = 0x10;
+    public static final byte STATE_CONNECTED2 = 0x20;
     
     public final static Config config = new Config();
     public static int state;
@@ -79,9 +82,8 @@ public class YuniControl extends Activity {
                     if(msg.arg1 != BluetoothChatService.STATE_CONNECTED)
                         break;
                     log("Connection succesful!");
-                    dialog.dismiss();
-                    state |= STATE_CONNECTED;
-                    InitTerminal();
+                    state |= STATE_CONNECTED1;
+                    BTConnected();
                     break;
                 case MESSAGE_LOG:
                     log((String)msg.obj);
@@ -96,7 +98,7 @@ public class YuniControl extends Activity {
                     if(msg.arg1 == BluetoothChatService.CONNECTION_LOST)
                         Disconnect(true);
                     else if(msg.arg1 == BluetoothChatService.CONNECTION_FAILED)
-                        EnableConnect(true);
+                    	EnableConnect(true);
                     break;
                 case MESSAGE_DATA:
                 {
@@ -126,6 +128,52 @@ public class YuniControl extends Activity {
         }
     };
     
+    private final Handler conButtonStatusHandler = new Handler() {
+        public void handleMessage(Message msg)
+        {
+            switch(msg.what)
+            {
+                case BluetoothChatService.MESSAGE_STATE_CHANGE:
+                    if(msg.arg1 != BluetoothChatService.STATE_CONNECTED)
+                        break;
+                    log("Button connection succesful!");
+                    state |= STATE_CONNECTED2;
+                    BTConnected();
+                    break;
+                case MESSAGE_LOG:
+                    log((String)msg.obj);
+                    break;
+                case BluetoothChatService.MESSAGE_TOAST:
+                    final String text = msg.getData().getString(BluetoothChatService.TOAST);
+                    log("Toast: " + text);
+                    if(text == null)
+                        break;
+                    Toast.makeText(context, text,
+                            Toast.LENGTH_SHORT).show();
+                    if(msg.arg1 == BluetoothChatService.CONNECTION_LOST)
+                        Disconnect(true);
+                    if(msg.arg1 == BluetoothChatService.CONNECTION_FAILED)
+                    	EnableConnect(true);
+                    break;
+                case MESSAGE_DATA:
+                {
+                    if(msg.obj == null)
+                        return;
+                    if(msg.arg1 == 0)
+                    {
+                        Packet pkt = (Packet)msg.obj; 
+                        log("Sending packet " + Protocol.opcodeToString(pkt.getOpcode()) + " lenght " + pkt.getLenght());
+                        con_button.SendPacket(pkt);
+                    }
+                    else
+                    	con_button.SendBytes((byte[])msg.obj);
+                    break;
+                }
+            }
+        }
+    };
+   
+    
     private void log(String text)
     {
         log.writeString(text);
@@ -138,7 +186,9 @@ public class YuniControl extends Activity {
     }
     public final PacketHandler packetHandler = new PacketHandler(conStatusHandler);
     
-    private final Connection con = new Connection(conStatusHandler);
+    private final Connection con = new Connection(conStatusHandler, (byte) 1);
+    
+    private final Connection con_button = new Connection(conButtonStatusHandler, (byte) 2);
     
     private class WorldThread extends Thread {
         boolean stop;
@@ -150,17 +200,21 @@ public class YuniControl extends Activity {
         public void run()
         {
              long lastTime = Calendar.getInstance().getTimeInMillis();
+             long thisTime = 0;
              while(!stop)
              {
-                 long thisTime = Calendar.getInstance().getTimeInMillis();
-                 World.getInstance().Update((int)(thisTime - lastTime));
                  try
                  {
-                     Thread.sleep(50);
+                     Thread.sleep(200);
                  } catch (InterruptedException e) {
                      // TODO Auto-generated catch block
                      e.printStackTrace();
                  }
+                 thisTime = Calendar.getInstance().getTimeInMillis();
+                 if(World.getInstance() == null)
+                	 break;
+                 
+                 World.getInstance().Update((int)(thisTime - lastTime));
                  lastTime = thisTime;
              }
         }
@@ -187,13 +241,13 @@ public class YuniControl extends Activity {
              {
                  try
                  {
-                     Thread.sleep(500);
+                     Thread.sleep(400);
                  } catch (InterruptedException e) {
                      // TODO Auto-generated catch block
                      e.printStackTrace();
                  }
                  if(!pause)
-                     con.SendPacket(pingPacket);
+                	 con.SendPacket(pingPacket);
              }
         }
       
@@ -332,6 +386,20 @@ public class YuniControl extends Activity {
         }
     }
     
+    private void BTConnected()
+    {
+    	if((state & STATE_CONNECTED1) != 0 && (state & STATE_CONNECTED2) == 0)
+    	{
+    		BluetoothDevice device = con.GetAdapter().getRemoteDevice(ButtonAddreess);
+            con_button.ConnectBT(device);
+            return;
+    	}
+
+        dialog.dismiss();
+        state |= STATE_CONNECTED;
+        InitTerminal();
+    }
+    
     void ShowAlert(CharSequence text)
     {
         AlertDialog.Builder builder2 = new AlertDialog.Builder(context);
@@ -351,6 +419,7 @@ public class YuniControl extends Activity {
         mArrayAdapter = null;
         mPairedDevices = null;
         con.disconnect();
+        con_button.disconnect();
         dialog = null;
         log.close();
         if(worldThread != null)
@@ -379,6 +448,7 @@ public class YuniControl extends Activity {
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                con.init();
+               con_button.init();
                if(con.GetConType() == Connection.CONNECTION_BLUETOOTH)
                    InitBluetooth();
                else
@@ -562,13 +632,18 @@ public class YuniControl extends Activity {
                 public void onCancel(DialogInterface dia)
                 {
                     con.stopBTService();
+                    con_button.stopBTService();
                     EnableConnect(true);
                 }
             });
             dialog.show();
         }
         else
+        {
+        	con.disconnect();
+            con_button.disconnect();
             dialog.dismiss();
+        }
         Button button = (Button) findViewById(R.id.button_scan);
         button.setEnabled(enable);
         ListView listView = (ListView) findViewById(R.id.new_devices);
@@ -631,7 +706,7 @@ public class YuniControl extends Activity {
                         state &= ~(STATE_SCROLL);
                     }
                     try {
-                        Thread.sleep(300);
+                        Thread.sleep(500);
                     } catch (InterruptedException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();

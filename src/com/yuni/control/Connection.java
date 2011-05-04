@@ -12,13 +12,16 @@ public class Connection
     public static final byte CONNECTION_BLUETOOTH = 1;
     public static final byte CONNECTION_USB       = 2;
     
-    public Connection(Handler handler)
+    private byte m_pos;
+    
+    public Connection(Handler handler, byte pos)
     {
         con_type = 0;
         bluetoothService = null;
         mBluetoothAdapter = null;
         statusHandler = handler;
         protocol = new Protocol(handler);
+        m_pos = pos;
     }
     
     public void init()
@@ -32,7 +35,7 @@ public class Connection
     
     private void init_bluetooth()
     {
-        bluetoothService = new BluetoothChatService(bluetoothHandler); 
+        bluetoothService = new BluetoothChatService(bluetoothHandler, m_pos); 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
     
@@ -73,10 +76,10 @@ public class Connection
         if(con_type == CONNECTION_BLUETOOTH)
         {
             byte[] data = new byte[pkt.getLenght()+4];
-            data[0] = (byte)0xFF;      // start
-            data[1] = 0x01;            // address
-            data[2] = pkt.getLenght(); // data lenght
-            data[3] = pkt.getOpcode(); // opcode
+            data[0] = (byte) 0xFF;      // start
+            data[1] = m_pos;            // address
+            data[2] = pkt.getLenght();  // data lenght
+            data[3] = pkt.getOpcode();  // opcode
             
             for(byte y = 0; y < pkt.getLenght(); ++y)
                 data[y+4] = pkt.get(y);

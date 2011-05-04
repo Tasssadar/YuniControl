@@ -32,10 +32,7 @@ class PacketHandler
                 short adr = packet.readByte();
                 short status = packet.readByte();
                 log = "Button adr " + adr + " status " + status;
-                if(adr == 0x01 && status == 0x01)
-                    World.getInstance().GetYunimin().Start();
-                else if(adr == 0x02 && status == 0x01)
-                    World.getInstance().GetYunimin().action(Yunimin.SPEC_ACT_DISC_IN);
+                World.getInstance().GetYunimin().ButtonStatus(adr, status);
                 break;
             case Protocol.CMSG_ENCODER_EVENT_DONE:
                 byte eventID = packet.get((byte) 0);

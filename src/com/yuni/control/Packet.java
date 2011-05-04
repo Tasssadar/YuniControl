@@ -70,18 +70,18 @@ public class Packet
         m_lenght = lenght;
         m_readPos = 0;
     }
-    public byte[] getSendData()
+    /*public byte[] getSesndData()
     {
         byte res[] = new byte[m_lenght+4];
         res[0] = (byte) 0xFF; // start
-        res[1] = 0x01;        // address
+        res[1] = (byte) 0xEF; // address
         res[2] = m_lenght;    // data lenght;
         res[3] = m_opcode;    // opcode
         if(m_data != null)
             for(byte i = 0; i < m_lenght; ++i)
                 res[i+4] = m_data[i];
         return res;
-    }
+    } */
     public boolean hasData() { return (m_data != null); }
     public byte getOpcode() { return m_opcode; }
     public byte getLenght() { return m_lenght; }
