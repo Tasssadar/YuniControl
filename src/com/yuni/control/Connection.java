@@ -93,7 +93,7 @@ public class Connection
     
     public void SendBytes(byte[] data)
     {
-    	bluetoothService.write(data);
+        bluetoothService.write(data);
     }
     
     private final Handler bluetoothHandler = new Handler() {
@@ -101,8 +101,8 @@ public class Connection
         public void handleMessage(Message msg) {
             if(msg.what == BluetoothChatService.MESSAGE_READ && msg.obj != null)
             {
-            	if((YuniControl.state & YuniControl.STATE_RESTARTING) == 0) 
-            		protocol.parseData((byte[])msg.obj, (byte) msg.arg1);
+                if((YuniControl.state & YuniControl.STATE_RESTARTING) == 0) 
+                    protocol.parseData((byte[])msg.obj, (byte) msg.arg1);
             }
             else
             {

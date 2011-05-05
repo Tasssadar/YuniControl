@@ -42,8 +42,8 @@ import com.yuni.control.Packet;
 
 public class YuniControl extends Activity {
 
-	public static final String ButtonAddreess = "00:12:F3:04:A9:EB";
-	public static final byte STATE_CONNECTED = 0x01;
+    public static final String ButtonAddreess = "00:12:F3:04:A9:EB";
+    public static final byte STATE_CONNECTED = 0x01;
     public static final byte STATE_TERMINAL  = 0x02;
     public static final byte STATE_SCROLL    = 0x04;
     public static final byte STATE_RESTARTING= 0x08;
@@ -98,7 +98,7 @@ public class YuniControl extends Activity {
                     if(msg.arg1 == BluetoothChatService.CONNECTION_LOST)
                         Disconnect(true);
                     else if(msg.arg1 == BluetoothChatService.CONNECTION_FAILED)
-                    	EnableConnect(true);
+                        EnableConnect(true);
                     break;
                 case MESSAGE_DATA:
                 {
@@ -153,7 +153,7 @@ public class YuniControl extends Activity {
                     if(msg.arg1 == BluetoothChatService.CONNECTION_LOST)
                         Disconnect(true);
                     if(msg.arg1 == BluetoothChatService.CONNECTION_FAILED)
-                    	EnableConnect(true);
+                        EnableConnect(true);
                     break;
                 case MESSAGE_DATA:
                 {
@@ -166,7 +166,7 @@ public class YuniControl extends Activity {
                         con_button.SendPacket(pkt);
                     }
                     else
-                    	con_button.SendBytes((byte[])msg.obj);
+                        con_button.SendBytes((byte[])msg.obj);
                     break;
                 }
             }
@@ -212,7 +212,7 @@ public class YuniControl extends Activity {
                  }
                  thisTime = Calendar.getInstance().getTimeInMillis();
                  if(World.getInstance() == null)
-                	 break;
+                     break;
                  
                  World.getInstance().Update((int)(thisTime - lastTime));
                  lastTime = thisTime;
@@ -247,7 +247,7 @@ public class YuniControl extends Activity {
                      e.printStackTrace();
                  }
                  if(!pause)
-                	 con.SendPacket(pingPacket);
+                     con.SendPacket(pingPacket);
              }
         }
       
@@ -388,12 +388,12 @@ public class YuniControl extends Activity {
     
     private void BTConnected()
     {
-    	if((state & STATE_CONNECTED1) != 0 && (state & STATE_CONNECTED2) == 0)
-    	{
-    		BluetoothDevice device = con.GetAdapter().getRemoteDevice(ButtonAddreess);
+        if((state & STATE_CONNECTED1) != 0 && (state & STATE_CONNECTED2) == 0)
+        {
+            BluetoothDevice device = con.GetAdapter().getRemoteDevice(ButtonAddreess);
             con_button.ConnectBT(device);
             return;
-    	}
+        }
 
         dialog.dismiss();
         state |= STATE_CONNECTED;
@@ -640,7 +640,7 @@ public class YuniControl extends Activity {
         }
         else
         {
-        	con.disconnect();
+            con.disconnect();
             con_button.disconnect();
             dialog.dismiss();
         }
