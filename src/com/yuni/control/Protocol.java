@@ -36,6 +36,9 @@ public class Protocol
     public final static byte SMSG_TEST                = 0x27;
     public final static byte CMSG_TEST_RESULT         = 0x28;
     public final static byte SMSG_ENCODER_RM_EVENT    = 0x29;
+    public final static byte CMSG_RANGE_VALUE         = 0x30;
+    public final static byte SMSG_SHUTDOWN_RANGE      = 0x31;
+    public final static byte CMSG_DEADEND_DETECTED    = 0x32;
     
     public Protocol(Handler handler)
     {
@@ -117,7 +120,7 @@ public class Protocol
     {
         switch(opcode)
         {
-            default: return String.valueOf(opcode);
+            default: return "0x"+Integer.toHexString(opcode).toUpperCase();
             case SMSG_PING:                  return "SMSG_PING";
             case CMSG_PONG:                  return "CMSG_PONG";
             case SMSG_SET_MOVEMENT:          return "SMSG_SET_MOVEMENT";
@@ -147,6 +150,9 @@ public class Protocol
             case SMSG_TEST:                  return "SMSG_TEST";
             case CMSG_TEST_RESULT:           return "CMSG_TEST_RESULT";
             case SMSG_ENCODER_RM_EVENT:      return "SMSG_ENCODER_RM_EVENT";
+            case CMSG_RANGE_VALUE:           return "CMSG_RANGE_VALUE"; 
+            case SMSG_SHUTDOWN_RANGE:        return "SMSG_SHUTDOWN_RANGE";
+            case CMSG_DEADEND_DETECTED:      return "CMSG_DEADEND_DETECTED";
         }
     }
     

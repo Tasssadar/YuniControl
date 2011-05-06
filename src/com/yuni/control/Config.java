@@ -3,8 +3,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import com.yuni.control.AI.World;
-
 public class Config
 {
     public final static byte CONF_BYTE_CONNECT_METHOD = 0;

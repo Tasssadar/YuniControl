@@ -1,7 +1,6 @@
 package com.yuni.control;
 
 import com.yuni.control.AI.World;
-import com.yuni.control.AI.Yunimin;
 
 import android.os.Handler;
 import android.os.Message;
@@ -78,10 +77,22 @@ class PacketHandler
             	    "\r\n RightEnc: " + packet.readUInt16();
             	break;
             }
+            case Protocol.CMSG_RANGE_BLOCK:
+            	log = "range block!";
+            	World.getInstance().GetYunimin().RangeBlock(true);
+            	break;
+            case Protocol.CMSG_RANGE_BLOCK_GONE:
+            	log = "range block gone.";
+            	World.getInstance().GetYunimin().RangeBlock(false);
+            	break;
+            case Protocol.CMSG_RANGE_VALUE:
+            	log = "range " + Integer.toHexString(packet.readByte()) + " " + packet.readUInt16();
+            	break;
             default:
                 log = "Packet with opcode " + Protocol.opcodeToString(packet.getOpcode()) + " and lenght " + packet.getLenght() + " recieved";
                 break;
         }
+        
         if(sendLog && log != null)
         {
             msg.what = YuniControl.MESSAGE_LOG;

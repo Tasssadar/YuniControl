@@ -15,13 +15,13 @@ public class Yunimin extends WorldObject
     private boolean end;
     private boolean hardEnd;
     private boolean discIn;
+    private boolean m_block;
     
     private final static byte SPEC_ACT_OPEN_DOORS  = 1;
     private final static byte SPEC_ACT_CLOSE_DOORS = 2;
     public  final static byte SPEC_ACT_DISC_IN     = 3;
     private final static byte SPEC_ACT_MATCH_END   = 4;
     private final static byte SPEC_ACT_CHECK_FOR_DISC= 5;
-    private final static byte SPEC_ACT_CONTINUE    = 6;
     
     private final static byte SERVO_DOORS        = 0x01;                                                                                                                
     private final static byte SERVO_BRUSHES      = 0x02;
@@ -35,11 +35,7 @@ public class Yunimin extends WorldObject
     private final static byte routeNodes = 17;
     private final static byte escapeNode = 8;
     private final static byte escapeNode2 = 13;
-    
-    private final static byte leftNode = 17;
-    private final static byte rightNode = 19;
-    private byte nodeToContinue = -1;
-    
+       
     private final static byte BUTTON_START     = 0x01;
     private final static byte BUTTON_PAWN      = 0x02;
     private final static byte BUTTON_FRONT     = 0x04;
@@ -57,11 +53,11 @@ public class Yunimin extends WorldObject
         new routeNode(WorldObject.MOVE_NONE,    0,    0,   (byte) 127, SPEC_ACT_CLOSE_DOORS,    (byte) 0),
         new routeNode(WorldObject.MOVE_LEFT,    650,  650, (byte) 127, SPEC_ACT_CHECK_FOR_DISC, (byte) 0), // 5
         new routeNode(WorldObject.MOVE_BACKWARD,1000, 950, (byte) 127, SPEC_ACT_OPEN_DOORS,     (byte) (BUTTON_BACK_LEFT| BUTTON_BACK_RIGHT)),
-        new routeNode(WorldObject.MOVE_FORWARD, 5000, 5000,(byte) 127, SPEC_ACT_CHECK_FOR_DISC, (byte) 0), // 7
+        new routeNode(WorldObject.MOVE_FORWARD, 6000, 6000,(byte) 127, SPEC_ACT_CHECK_FOR_DISC, (byte) 0), // 7
         
         new routeNode(WorldObject.MOVE_BACKWARD,100,  100, (byte) 127, (byte) 0,                (byte) (BUTTON_BACK_LEFT| BUTTON_BACK_RIGHT)), // 8 - this one is calculated
         new routeNode(WorldObject.MOVE_FORWARD, 100,  100, (byte) 127, (byte) 0,                (byte) 0), // 9 - this one is calculated
-        new routeNode(WorldObject.MOVE_LEFT,    1600,  1200,(byte) 127, (byte) 0,               (byte) 0), // 10
+        new routeNode(WorldObject.MOVE_LEFT,    1600, 1400,(byte) 127, (byte) 0,               (byte) 0), // 10
         new routeNode(WorldObject.MOVE_FORWARD, 2650, 3500,(byte) 127, (byte) 0,                (byte) BUTTON_FRONT), // 11
         new routeNode(WorldObject.MOVE_BACKWARD,200,  200, (byte) 127, SPEC_ACT_MATCH_END,      (byte) 0), // 12
         
@@ -97,6 +93,7 @@ public class Yunimin extends WorldObject
         timerEnd = 90000;
         discIn = false;
         hardEnd = false;
+        m_block = false;
     }
     
     public void Start()
@@ -176,14 +173,6 @@ public class Yunimin extends WorldObject
                     return true;
                 break;
             }
-            case SPEC_ACT_CONTINUE:
-            {
-                node = nodeToContinue;
-                waitEventID = nodeToContinue;
-                nodeToContinue = -1;
-                sendMovement();
-                return false;
-            }
         }
         return true;
     }
@@ -213,16 +202,15 @@ public class Yunimin extends WorldObject
                 action(Yunimin.SPEC_ACT_DISC_IN);
                 return;
         }
-        if((route[node].waitButtons & BUTTON_BACK_LEFT) != 0 || (route[node].waitButtons & BUTTON_FRONT) != 0 && status == 1)
+        if(((route[node].waitButtons & BUTTON_BACK_LEFT) != 0 || (route[node].waitButtons & BUTTON_FRONT) != 0) && status == 1)
         {
-            
+        	if((flags & BUTTON_FRONT) != 0 && (route[node].waitButtons & BUTTON_FRONT) != 0)
+            {
+            	Packet shut = new Packet(Protocol.SMSG_SHUTDOWN_RANGE, null, (byte) 0);
+            	World.getInstance().SendPacket(shut);
+            }
             if((flags & BUTTON_BACK_LEFT) != 0 || (flags & BUTTON_BACK_RIGHT) != 0 || (flags & BUTTON_FRONT) != 0)
             {
-                if(nodeToContinue != -1)
-                {
-                    waitEventID = nodeToContinue;
-                    node = nodeToContinue;
-                }
                 if(route[node].specialAction != 0)
                     action(route[node].specialAction);
                 if(node < routeNodes)
@@ -231,6 +219,7 @@ public class Yunimin extends WorldObject
                     ++node;
                 }
             }
+            
             /*else if((flags & BUTTON_BACK_LEFT) != 0)
             {
                 pktMove.setWritePos((byte) 0);    
@@ -311,6 +300,11 @@ public class Yunimin extends WorldObject
         World.getInstance().SendPacket(pktMove);
     }
     
+    public void RangeBlock(boolean block)
+    {
+    	m_block = block;
+    }
+    
     @Override
     public void Update(int diff)
     {
@@ -325,7 +319,7 @@ public class Yunimin extends WorldObject
             }else timerEnd -= diff;
         }
         
-        if(!started || end || hardEnd)
+        if(!started || end || hardEnd || m_block)
             return;
    
         // Set new movement

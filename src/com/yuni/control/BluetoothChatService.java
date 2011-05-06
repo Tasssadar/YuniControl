@@ -19,13 +19,10 @@ package com.yuni.control;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.UUID;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.os.Bundle;
 import android.os.Handler;
@@ -41,13 +38,9 @@ import android.util.Log;
 public class BluetoothChatService {
     // Debugging
     private static final String TAG = "BluetoothChatService";
-    private static final boolean D = true;
 
     // Name for the SDP record when creating server socket
     private String NAME = "BluetoothChat";
-
-    // Unique UUID for this application
-    private static final UUID MY_UUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
     
     public static final int MESSAGE_STATE_CHANGE = 1;
     public static final int MESSAGE_READ = 2;

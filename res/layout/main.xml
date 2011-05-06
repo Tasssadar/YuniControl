@@ -32,5 +32,16 @@
             android:layout_marginLeft="2px"
             android:layout_centerHorizontal="true"
             android:layout_below="@id/Side_b"/> 
+            
+        <!-- <TextView android:id="@+id/warn_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10px"
+            android:layout_marginLeft="2px"
+            android:text="END TIMER DISABLED!!!!"
+            android:layout_centerHorizontal="true"
+            android:textSize="40dip"
+            android:layout_below="@id/config_status_t"/> -->
+        
 
 </RelativeLayout>
