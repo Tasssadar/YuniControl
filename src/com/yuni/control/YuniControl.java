@@ -377,10 +377,27 @@ public class YuniControl extends Activity {
                 log("Yunimin script restarted");
                 return true;
             case R.id.test:
+            {
                 Packet pkt = new Packet(Protocol.SMSG_TEST, null, (byte) 0);
                 con.SendPacket(pkt);
                 log("Test started");
                 return true;
+            }
+            case R.id.addr:
+            {
+            	Packet pkt = new Packet(Protocol.SMSG_SET_RANGE_ADDR, null, (byte) 1);
+            	pkt.writeByte((byte) 0xE0);
+                con.SendPacket(pkt);
+                log("setting address " + pkt.get((byte) 0) );
+            	return true;
+            }
+            case R.id.testRange:
+            {
+            	Packet pkt = new Packet(Protocol.SMSG_TEST_RANGE, null, (byte) 0);
+                con.SendPacket(pkt);
+                log("range adr test started");
+            	return true;
+            }
             default:
                 return super.onOptionsItemSelected(item);
         }

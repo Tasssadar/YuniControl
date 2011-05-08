@@ -88,6 +88,11 @@ class PacketHandler
             case Protocol.CMSG_RANGE_VALUE:
             	log = "range " + Integer.toHexString(packet.readByte()) + " " + packet.readUInt16();
             	break;
+            case Protocol.CMSG_SET_POWER_REQ:
+            	log = "set motor pwr left " + packet.readByte() + " right " + packet.readByte();
+            	break;
+            case Protocol.CMSG_RANGE_ADDR_EMPTY:
+            	log = "Finder adr 0x" +Integer.toHexString(packet.readByte()).toUpperCase() + " is empty!";
             default:
                 log = "Packet with opcode " + Protocol.opcodeToString(packet.getOpcode()) + " and lenght " + packet.getLenght() + " recieved";
                 break;

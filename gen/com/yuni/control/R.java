@@ -18,6 +18,7 @@ public final class R {
         public static final int Reload_b=0x7f060006;
         public static final int ScrollView01=0x7f060009;
         public static final int Side_b=0x7f060007;
+        public static final int addr=0x7f06000f;
         public static final int button_scan=0x7f060004;
         public static final int config_status_t=0x7f060008;
         public static final int new_devices=0x7f060003;
@@ -26,6 +27,7 @@ public final class R {
         public static final int restart_program=0x7f06000c;
         public static final int restart_yuni=0x7f06000b;
         public static final int test=0x7f06000d;
+        public static final int testRange=0x7f06000e;
         public static final int title_new_devices=0x7f060002;
         public static final int title_paired_devices=0x7f060000;
     }

@@ -39,6 +39,10 @@ public class Protocol
     public final static byte CMSG_RANGE_VALUE         = 0x30;
     public final static byte SMSG_SHUTDOWN_RANGE      = 0x31;
     public final static byte CMSG_DEADEND_DETECTED    = 0x32;
+    public final static byte CMSG_SET_POWER_REQ       = 0x33;
+    public final static byte CMSG_RANGE_ADDR_EMPTY    = 0x34;
+    public final static byte SMSG_SET_RANGE_ADDR      = 0x35;
+    public final static byte SMSG_TEST_RANGE          = 0x36;
     
     public Protocol(Handler handler)
     {
@@ -153,6 +157,7 @@ public class Protocol
             case CMSG_RANGE_VALUE:           return "CMSG_RANGE_VALUE"; 
             case SMSG_SHUTDOWN_RANGE:        return "SMSG_SHUTDOWN_RANGE";
             case CMSG_DEADEND_DETECTED:      return "CMSG_DEADEND_DETECTED";
+            case CMSG_SET_POWER_REQ:         return "CMSG_SET_POWER_REQ";
         }
     }
     
